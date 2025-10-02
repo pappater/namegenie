@@ -39,8 +39,24 @@ function generateDomain() {
 
 // Setup the UI after loading word lists
 async function setup() {
+  // Add toast container
+  const toast = document.createElement('div');
+  toast.id = 'toast';
+  toast.style.cssText = 'position:fixed;left:50%;bottom:2em;transform:translateX(-50%);background:var(--color-domain-generated-bg);color:var(--color-domain-generated);padding:0.7em 1.2em;border-radius:8px;font-size:1em;box-shadow:0 2px 8px rgba(0,0,0,0.08);opacity:0;pointer-events:none;z-index:9999;transition:opacity 0.3s;';
+  document.body.appendChild(toast);
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+  }
   await loadWordLists();
   document.querySelector('#app').innerHTML = `
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.5em;">
+      <button id="theme-toggle" aria-label="Toggle light/dark mode" style="background: none; border: none; cursor: pointer; font-size: 1.3em; padding: 0.2em 0.5em;">
+        <span id="theme-icon">🌙</span>
+      </button>
+    </div>
     <h1>Domain Name Generator</h1>
     <p class="description">Generate a fun, memorable domain name.</p>
     <div class="domain-display">
@@ -62,6 +78,29 @@ async function setup() {
       @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
     </style>
   `;
+  // Theme toggle logic
+  const themeToggle = document.getElementById('theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+  function setTheme(mode) {
+    if (mode === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      themeIcon.textContent = '☀️';
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      themeIcon.textContent = '🌙';
+      localStorage.setItem('theme', 'light');
+    }
+  }
+  // Initial theme
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) setTheme(savedTheme);
+  else if (window.matchMedia('(prefers-color-scheme: dark)').matches) setTheme('dark');
+  else setTheme('light');
+  themeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    setTheme(current === 'dark' ? 'light' : 'dark');
+  });
 
 
   const domainDisplay = document.querySelector('#domain');
@@ -80,10 +119,7 @@ async function setup() {
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(currentDomain);
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => {
-        copyBtn.textContent = 'Copy';
-      }, 1500);
+      showToast('Copied to clipboard!');
     } catch (err) {
       // fallback
       const textArea = document.createElement('textarea');
@@ -92,10 +128,7 @@ async function setup() {
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => {
-        copyBtn.textContent = 'Copy';
-      }, 1500);
+      showToast('Copied to clipboard!');
     }
   });
 }
