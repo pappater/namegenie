@@ -50,6 +50,14 @@ async function setup() {
       <button id="generate-btn" type="button">Generate</button>
       <button id="copy-btn" type="button" style="display: none;">Copy</button>
     </div>
+    <footer class="footer">
+      <p>
+        <strong>NameGenie</strong> helps you generate creative, memorable, and fun domain names using open datasets.<br>
+        Inspired by Codespaces/Heroku-style names. Built with Vite, deployed on GitHub Pages.<br>
+        Word lists sourced from <a href="https://github.com/dariusk/corpora" target="_blank" rel="noopener">dariusk/corpora</a>.<br>
+        Main site: <a href="https://pappater.github.io/" target="_blank" rel="noopener">https://pappater.github.io/</a>
+      </p>
+    </footer>
   `;
 
   const domainDisplay = document.querySelector('#domain');
