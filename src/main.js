@@ -41,26 +41,14 @@ function generateDomain() {
 async function setup() {
   await loadWordLists();
   document.querySelector('#app').innerHTML = `
-    <div>
-      <h1>🌐 Fun Domain Name Generator</h1>
-      <p class="description">Click the button to generate a fun, memorable domain name!</p>
-      <div class="domain-display">
-        <div id="domain" class="domain">Click "Generate" to start</div>
-      </div>
-      <div class="card">
-        <button id="generate-btn" type="button">Generate Domain</button>
-        <button id="copy-btn" type="button" style="display: none;">Copy to Clipboard</button>
-      </div>
-      <div class="features">
-        <h3>Features:</h3>
-        <ul>
-          <li>✨ Generates fun, Codespaces-style names</li>
-          <li>🎲 Random combinations every time</li>
-          <li>📋 Copy to clipboard with one click</li>
-          <li>🚀 Powered by Vite</li>
-          <li>🌍 Uses open GitHub datasets</li>
-        </ul>
-      </div>
+    <h1>Domain Name Generator</h1>
+    <p class="description">Generate a fun, memorable domain name.</p>
+    <div class="domain-display">
+      <div id="domain" class="domain">Click Generate to start</div>
+    </div>
+    <div class="card">
+      <button id="generate-btn" type="button">Generate</button>
+      <button id="copy-btn" type="button" style="display: none;">Copy</button>
     </div>
   `;
 
@@ -75,33 +63,27 @@ async function setup() {
     domainDisplay.textContent = currentDomain;
     domainDisplay.classList.add('generated');
     copyBtn.style.display = 'inline-block';
-    // Add animation
-    domainDisplay.style.animation = 'none';
-    setTimeout(() => {
-      domainDisplay.style.animation = 'slideIn 0.5s ease-out';
-    }, 10);
   });
 
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(currentDomain);
-      copyBtn.textContent = 'Copied! ✓';
+      copyBtn.textContent = 'Copied!';
       setTimeout(() => {
-        copyBtn.textContent = 'Copy to Clipboard';
-      }, 2000);
+        copyBtn.textContent = 'Copy';
+      }, 1500);
     } catch (err) {
-      console.error('Failed to copy:', err);
-      // Fallback for older browsers
+      // fallback
       const textArea = document.createElement('textarea');
       textArea.value = currentDomain;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      copyBtn.textContent = 'Copied! ✓';
+      copyBtn.textContent = 'Copied!';
       setTimeout(() => {
-        copyBtn.textContent = 'Copy to Clipboard';
-      }, 2000);
+        copyBtn.textContent = 'Copy';
+      }, 1500);
     }
   });
 }
