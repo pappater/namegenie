@@ -2,6 +2,7 @@
   #app {
     max-width: 100%;
     padding: 1rem 0.2rem;
+    margin: 1.2em;
   }
   h1 {
     font-size: 1.2em;
@@ -12,21 +13,61 @@
     padding: 0.7em 0.3em;
     min-height: 2em;
   }
-  .card {
-    flex-direction: column;
-    gap: 0.5em;
+  .card, .button-row, .button-group {
+    display: flex;
+    flex-direction: column !important;
+    gap: 0.7em !important;
+    width: 100%;
   }
   button {
     width: 100%;
     font-size: 1em;
     padding: 0.7em 0;
+    margin: 0;
+    box-sizing: border-box;
   }
+  /* ...existing code... */
   .description {
     font-size: 0.95em;
     margin-bottom: 1.2em;
   }
   .domain-display {
     margin: 1em 0 1em 0;
+  }
+  .footer {
+    font-size: 0.85em;
+    padding: 1em 0 0.5em 0;
+    margin-top: 2em;
+  }
+  body {
+    padding: 0;
+    min-width: 0;
+  }
+  #app {
+    min-height: unset;
+    box-sizing: border-box;
+  }
+  .domain {
+    font-size: 1.1em;
+    padding: 0.7em 0.2em;
+    min-height: 2em;
+    word-break: break-word;
+  }
+  .domain-display {
+    margin: 1em 0 1em 0;
+  }
+  input, select, textarea {
+    font-size: 1em;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  /* Hide scrollbars on mobile for a cleaner look */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  html {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
