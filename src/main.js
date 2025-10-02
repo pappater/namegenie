@@ -57,14 +57,23 @@ async function setup() {
         <span id="theme-icon">🌙</span>
       </button>
     </div>
-    <h1>Domain Name Generator</h1>
+    <h1 id="main-title">Domain Name Generator</h1>
     <p class="description">Generate a fun, memorable domain name.</p>
-    <div class="domain-display">
-      <div id="domain" class="domain">Click Generate to start</div>
+    <form id="options-form" style="margin-bottom:1em;display:flex;flex-wrap:wrap;gap:0.7em;justify-content:center;align-items:center;">
+      <label for="num-names" style="font-size:1em;">How many?</label>
+      <input id="num-names" name="num-names" type="number" min="1" max="10" value="1" aria-label="Number of names to generate" style="width:3em;" />
+      <label for="tld-select" style="font-size:1em;">TLD:</label>
+      <select id="tld-select" name="tld-select" aria-label="Choose TLD">
+        <option value="">Any</option>
+        ${tlds.map(tld => `<option value="${tld}">${tld}</option>`).join('')}
+      </select>
+    </form>
+    <div class="domain-display" aria-live="polite">
+      <div id="domain" class="domain" tabindex="0">Click Generate to start</div>
     </div>
     <div class="card">
-      <button id="generate-btn" type="button">Generate</button>
-      <button id="copy-btn" type="button" style="display: none;">Copy</button>
+      <button id="generate-btn" type="button" aria-label="Generate domain names">Generate</button>
+      <button id="copy-btn" type="button" style="display: none;" aria-label="Copy domain names">Copy</button>
     </div>
     <footer class="footer">
       <p>
@@ -106,24 +115,81 @@ async function setup() {
   const domainDisplay = document.querySelector('#domain');
   const generateBtn = document.querySelector('#generate-btn');
   const copyBtn = document.querySelector('#copy-btn');
+  const numNamesInput = document.getElementById('num-names');
+  const tldSelect = document.getElementById('tld-select');
 
-  let currentDomain = '';
+  let currentDomains = [];
+  let selectedDomainIdx = 0;
 
-  generateBtn.addEventListener('click', () => {
-    currentDomain = generateDomain();
-    domainDisplay.textContent = currentDomain;
+  function generateDomainCustom(tldOverride) {
+    const funName = generateFunName();
+    const tld = tldOverride || tlds[Math.floor(Math.random() * tlds.length)];
+    return `${funName.replace(/\s+/g, '-')}${tld}`;
+  }
+
+  function renderDomains() {
+    domainDisplay.innerHTML = currentDomains.map((d, i) =>
+      `<span class="domain-item${i === selectedDomainIdx ? ' selected' : ''}" tabindex="0" data-idx="${i}" aria-label="Domain ${i+1}: ${d}">${d}</span>`
+    ).join('<br>');
     domainDisplay.classList.add('generated');
     copyBtn.style.display = 'inline-block';
+    // Info for selection if more than one
+    let info = document.getElementById('select-info');
+    if (currentDomains.length > 1) {
+      if (!info) {
+        info = document.createElement('div');
+        info.id = 'select-info';
+        info.style.cssText = 'font-size:0.95em;color:var(--color-description);margin:0.5em 0;';
+        domainDisplay.parentElement.insertBefore(info, domainDisplay.nextSibling);
+      }
+      info.textContent = 'Select a domain to copy.';
+    } else if (info) {
+      info.remove();
+    }
+  }
+
+  domainDisplay.addEventListener('click', (e) => {
+    if (e.target.classList.contains('domain-item')) {
+      selectedDomainIdx = Number(e.target.getAttribute('data-idx'));
+      renderDomains();
+    }
+  });
+  domainDisplay.addEventListener('keydown', (e) => {
+    if (!currentDomains.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      selectedDomainIdx = (selectedDomainIdx + 1) % currentDomains.length;
+      renderDomains();
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      selectedDomainIdx = (selectedDomainIdx - 1 + currentDomains.length) % currentDomains.length;
+      renderDomains();
+      e.preventDefault();
+    }
+  });
+
+  generateBtn.addEventListener('click', () => {
+    const num = Math.max(1, Math.min(10, parseInt(numNamesInput.value) || 1));
+    const tldOverride = tldSelect.value || null;
+    currentDomains = Array.from({length: num}, () => generateDomainCustom(tldOverride));
+    selectedDomainIdx = 0;
+    renderDomains();
+    domainDisplay.focus();
   });
 
   copyBtn.addEventListener('click', async () => {
+    if (!currentDomains.length) return;
+    let textToCopy = currentDomains[selectedDomainIdx] || currentDomains[0];
+    if (currentDomains.length > 1 && (selectedDomainIdx === undefined || selectedDomainIdx === null)) {
+      showToast('Select a domain to copy!');
+      return;
+    }
     try {
-      await navigator.clipboard.writeText(currentDomain);
+      await navigator.clipboard.writeText(textToCopy);
       showToast('Copied to clipboard!');
     } catch (err) {
       // fallback
       const textArea = document.createElement('textarea');
-      textArea.value = currentDomain;
+      textArea.value = textToCopy;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
