@@ -58,7 +58,11 @@ async function setup() {
         Main site: <a href="https://pappater.github.io/" target="_blank" rel="noopener">https://pappater.github.io/</a>
       </p>
     </footer>
+    <style>
+      @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+    </style>
   `;
+
 
   const domainDisplay = document.querySelector('#domain');
   const generateBtn = document.querySelector('#generate-btn');
