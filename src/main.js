@@ -189,6 +189,11 @@ async function setup() {
     <div class="card">
       <button id="generate-btn" type="button" aria-label="${t('generate')}">${t('generate')}</button>
       <button id="copy-btn" type="button" style="display: none;" aria-label="${t('copy')}">${t('copy')}</button>
+      <button id="export-btn" type="button" aria-label="Export" style="margin-left:0.7em;">Export</button>
+      <select id="export-format" aria-label="Export format" style="margin-left:0.5em;">
+        <option value="csv">CSV</option>
+        <option value="txt">Text</option>
+      </select>
     </div>
     <footer class="footer">
       <p>${t('helps')}</p>
@@ -197,6 +202,42 @@ async function setup() {
       @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
     </style>
   `;
+  // Export logic
+  function exportDomains(format) {
+    if (!currentDomains.length) {
+      showToast('No domains to export!');
+      return;
+    }
+    let content = '';
+    let mime = '';
+    let filename = '';
+    if (format === 'csv') {
+      content = currentDomains.map(d => `"${d}"`).join(',\n');
+      mime = 'text/csv';
+      filename = 'domains.csv';
+    } else {
+      content = currentDomains.join('\n');
+      mime = 'text/plain';
+      filename = 'domains.txt';
+    }
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+
+  const exportBtn = document.getElementById('export-btn');
+  const exportFormat = document.getElementById('export-format');
+  if (exportBtn && exportFormat) {
+    exportBtn.onclick = () => exportDomains(exportFormat.value);
+  }
 
   // Language selector logic
   const langSelect = document.getElementById('lang-select');
