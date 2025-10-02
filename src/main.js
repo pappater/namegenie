@@ -39,6 +39,61 @@ function generateDomain() {
 
 // Setup the UI after loading word lists
 async function setup() {
+  // History and favorites state
+  let history = JSON.parse(localStorage.getItem('ng-history') || '[]');
+  let favorites = JSON.parse(localStorage.getItem('ng-favorites') || '[]');
+
+  function saveHistory() {
+    localStorage.setItem('ng-history', JSON.stringify(history.slice(-20)));
+  }
+  function saveFavorites() {
+    localStorage.setItem('ng-favorites', JSON.stringify(favorites));
+  }
+
+  function renderHistory() {
+    let histDiv = document.getElementById('history');
+    if (!histDiv) {
+      histDiv = document.createElement('div');
+      histDiv.id = 'history';
+      histDiv.setAttribute('aria-label', 'History and Favorites');
+      histDiv.style.marginTop = '2em';
+      document.getElementById('app').appendChild(histDiv);
+    }
+    let favSet = new Set(favorites);
+    histDiv.innerHTML = `<h2 style="font-size:1.1em;margin-bottom:0.5em;">History</h2>` +
+      (history.length ?
+        `<ul style="list-style:none;padding:0;">` +
+        history.slice(-20).reverse().map(domain =>
+          `<li style="margin-bottom:0.3em;display:flex;align-items:center;gap:0.5em;">
+            <span>${domain}</span>
+            <button class="fav-btn" data-domain="${domain}" aria-label="${favSet.has(domain) ? 'Remove from favorites' : 'Add to favorites'}" style="background:none;border:none;cursor:pointer;font-size:1.2em;">${favSet.has(domain) ? '★' : '☆'}</button>
+          </li>`
+        ).join('') + `</ul>`
+        : '<div style="color:var(--color-description);">No history yet.</div>') +
+      `<h2 style="font-size:1.1em;margin:1em 0 0.5em 0;">Favorites</h2>` +
+      (favorites.length ?
+        `<ul style="list-style:none;padding:0;">` +
+        favorites.slice().reverse().map(domain =>
+          `<li style="margin-bottom:0.3em;display:flex;align-items:center;gap:0.5em;">
+            <span>${domain}</span>
+            <button class="fav-btn" data-domain="${domain}" aria-label="Remove from favorites" style="background:none;border:none;cursor:pointer;font-size:1.2em;">★</button>
+          </li>`
+        ).join('') + `</ul>`
+        : '<div style="color:var(--color-description);">No favorites yet.</div>');
+    // Add event listeners for fav buttons
+    histDiv.querySelectorAll('.fav-btn').forEach(btn => {
+      btn.onclick = () => {
+        const domain = btn.getAttribute('data-domain');
+        if (favorites.includes(domain)) {
+          favorites = favorites.filter(f => f !== domain);
+        } else {
+          favorites.push(domain);
+        }
+        saveFavorites();
+        renderHistory();
+      };
+    });
+  }
   // Add toast container
   const toast = document.createElement('div');
   toast.id = 'toast';
@@ -129,7 +184,7 @@ async function setup() {
 
   function renderDomains() {
     domainDisplay.innerHTML = currentDomains.map((d, i) =>
-      `<span class="domain-item${i === selectedDomainIdx ? ' selected' : ''}" tabindex="0" data-idx="${i}" aria-label="Domain ${i+1}: ${d}">${d}</span>`
+      `<span class="domain-item${i === selectedDomainIdx ? ' selected' : ''}" tabindex="0" data-idx="${i}" aria-label="Domain ${i+1}: ${d}">${d} <button class='fav-btn' data-domain='${d}' aria-label='${favorites.includes(d) ? 'Remove from favorites' : 'Add to favorites'}' style='background:none;border:none;cursor:pointer;font-size:1.1em;'>${favorites.includes(d) ? '★' : '☆'}</button></span>`
     ).join('<br>');
     domainDisplay.classList.add('generated');
     copyBtn.style.display = 'inline-block';
@@ -142,10 +197,25 @@ async function setup() {
         info.style.cssText = 'font-size:0.95em;color:var(--color-description);margin:0.5em 0;';
         domainDisplay.parentElement.insertBefore(info, domainDisplay.nextSibling);
       }
-      info.textContent = 'Select a domain to copy.';
+      info.textContent = 'Select a domain to copy or favorite.';
     } else if (info) {
       info.remove();
     }
+    // Add event listeners for favorite buttons
+    domainDisplay.querySelectorAll('.fav-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const domain = btn.getAttribute('data-domain');
+        if (favorites.includes(domain)) {
+          favorites = favorites.filter(f => f !== domain);
+        } else {
+          favorites.push(domain);
+        }
+        saveFavorites();
+        renderDomains();
+        renderHistory();
+      };
+    });
   }
 
   domainDisplay.addEventListener('click', (e) => {
@@ -172,9 +242,17 @@ async function setup() {
     const tldOverride = tldSelect.value || null;
     currentDomains = Array.from({length: num}, () => generateDomainCustom(tldOverride));
     selectedDomainIdx = 0;
+    // Add to history
+    for (const d of currentDomains) {
+      if (!history.includes(d)) history.push(d);
+    }
+    saveHistory();
     renderDomains();
+    renderHistory();
     domainDisplay.focus();
   });
+  // Initial render of history/favorites
+  renderHistory();
 
   copyBtn.addEventListener('click', async () => {
     if (!currentDomains.length) return;

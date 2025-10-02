@@ -233,7 +233,13 @@ h1 {
   color: var(--color-domain);
   outline: none;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.domain-item:hover {
+  background: var(--color-domain-generated-bg);
+  color: var(--color-domain-generated);
+  transform: scale(1.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 .domain-item.selected,
 .domain-item:focus {
