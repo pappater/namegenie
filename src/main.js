@@ -1,11 +1,11 @@
 
-import './style.css';
 
-// Load adjectives and nouns from JSON files
+import './style.css';
+import { getTrendingNames, renderTrending } from './trending.js';
+
 let adjectives = [];
 let nouns = [];
 
-// Fetch word lists (works in Vite dev/prod)
 async function loadWordLists() {
   const adjRes = await fetch('adjectives.json');
   const nounRes = await fetch('nouns.json');
@@ -21,7 +21,6 @@ const tlds = [
   '.digital', '.solutions', '.services', '.agency', '.studio', '.works'
 ];
 
-// Generate fun Codespaces-style name
 function generateFunName() {
   if (!adjectives.length || !nouns.length) return 'Loading...';
   const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
@@ -29,7 +28,6 @@ function generateFunName() {
   return `${adj.toLowerCase()}-${noun.toLowerCase()}`;
 }
 
-// Generate random domain name (old style)
 function generateDomain() {
   const funName = generateFunName();
   const tld = tlds[Math.floor(Math.random() * tlds.length)];
@@ -37,17 +35,20 @@ function generateDomain() {
 }
 
 
-// Setup the UI after loading word lists
 async function setup() {
-  // History and favorites state
   let history = JSON.parse(localStorage.getItem('ng-history') || '[]');
   let favorites = JSON.parse(localStorage.getItem('ng-favorites') || '[]');
+  // For trending: track all-time favorite counts
+  let allTimeFavs = JSON.parse(localStorage.getItem('ng-alltime-favs') || '[]');
 
   function saveHistory() {
     localStorage.setItem('ng-history', JSON.stringify(history.slice(-20)));
   }
   function saveFavorites() {
     localStorage.setItem('ng-favorites', JSON.stringify(favorites));
+    // Update all-time favorites for trending
+    allTimeFavs = allTimeFavs.concat(favorites.filter(f => !allTimeFavs.includes(f)));
+    localStorage.setItem('ng-alltime-favs', JSON.stringify(allTimeFavs));
   }
 
   function renderHistory() {
@@ -91,10 +92,13 @@ async function setup() {
         }
         saveFavorites();
         renderHistory();
+        // Update trending section
+        renderTrending(getTrendingNames(JSON.parse(localStorage.getItem('ng-alltime-favs') || '[]')));
       };
     });
+    // Update trending section after rendering history
+    renderTrending(getTrendingNames(JSON.parse(localStorage.getItem('ng-alltime-favs') || '[]')));
   }
-  // Add toast container
   const toast = document.createElement('div');
   toast.id = 'toast';
   toast.style.cssText = 'position:fixed;left:50%;bottom:2em;transform:translateX(-50%);background:var(--color-domain-generated-bg);color:var(--color-domain-generated);padding:0.7em 1.2em;border-radius:8px;font-size:1em;box-shadow:0 2px 8px rgba(0,0,0,0.08);opacity:0;pointer-events:none;z-index:9999;transition:opacity 0.3s;';
@@ -105,7 +109,6 @@ async function setup() {
     toast.style.opacity = '1';
     setTimeout(() => { toast.style.opacity = '0'; }, 1500);
   }
-  // Localization strings
   const locales = {
     en: {
       title: 'Domain Name Generator',
@@ -202,7 +205,6 @@ async function setup() {
       @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
     </style>
   `;
-  // Export logic
   function exportDomains(format) {
     if (!currentDomains.length) {
       showToast('No domains to export!');
@@ -238,15 +240,12 @@ async function setup() {
   if (exportBtn && exportFormat) {
     exportBtn.onclick = () => exportDomains(exportFormat.value);
   }
-
-  // Language selector logic
   const langSelect = document.getElementById('lang-select');
   langSelect.addEventListener('change', () => {
     lang = langSelect.value;
     localStorage.setItem('ng-lang', lang);
     setup(); // re-render UI in new language
   });
-  // Theme toggle logic
   const themeToggle = document.getElementById('theme-toggle');
   const themeIcon = document.getElementById('theme-icon');
   function setTheme(mode) {
@@ -260,7 +259,6 @@ async function setup() {
       localStorage.setItem('theme', 'light');
     }
   }
-  // Initial theme
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme) setTheme(savedTheme);
   else if (window.matchMedia('(prefers-color-scheme: dark)').matches) setTheme('dark');
@@ -292,7 +290,6 @@ async function setup() {
     ).join('<br>');
     domainDisplay.classList.add('generated');
     copyBtn.style.display = 'inline-block';
-    // Info for selection if more than one
     let info = document.getElementById('select-info');
     if (currentDomains.length > 1) {
       if (!info) {
@@ -305,7 +302,6 @@ async function setup() {
     } else if (info) {
       info.remove();
     }
-    // Add event listeners for favorite buttons
     domainDisplay.querySelectorAll('.fav-btn').forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
@@ -346,7 +342,6 @@ async function setup() {
     const tldOverride = tldSelect.value || null;
     currentDomains = Array.from({length: num}, () => generateDomainCustom(tldOverride));
     selectedDomainIdx = 0;
-    // Add to history
     for (const d of currentDomains) {
       if (!history.includes(d)) history.push(d);
     }
@@ -355,8 +350,9 @@ async function setup() {
     renderHistory();
     domainDisplay.focus();
   });
-  // Initial render of history/favorites
   renderHistory();
+  // Initial trending section
+  renderTrending(getTrendingNames(JSON.parse(localStorage.getItem('ng-alltime-favs') || '[]')));
 
   copyBtn.addEventListener('click', async () => {
     if (!currentDomains.length) return;
@@ -369,7 +365,6 @@ async function setup() {
       await navigator.clipboard.writeText(textToCopy);
       showToast('Copied to clipboard!');
     } catch (err) {
-      // fallback
       const textArea = document.createElement('textarea');
       textArea.value = textToCopy;
       document.body.appendChild(textArea);
